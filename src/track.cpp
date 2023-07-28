@@ -14,7 +14,7 @@ myTrack::myTrack(string str){
     createTrackbar("V max", "track", &vmax, 255);
     */
 
-    while(waitKey(0) != 27){
+    while(waitKey(delay) != 27){
         cap >> img;
         if(img.empty()) break;
         
@@ -73,7 +73,7 @@ Point myTrack::getContours(Mat img_mask){
             //tl和br分别得到左上和右下角坐标
 
             //得到中n心点
-            if(area > 7700){
+            if(area > 7700 || (area > 7799 && area < 8850)){
                 myPoint.x = boundRect[i].x + boundRect[i].width / 2;
                 myPoint.y = boundRect[i].y + boundRect[i].height / 2;
 
@@ -146,7 +146,13 @@ void myTrack::findOrange(Mat img){
 
         // prePoint[0] = prePoint[0] + speedX - 3;
         // prePoint[1] = prePoint[1] + speedY - 3;
-        prePoint.push_back({(int)(mybePoint.x + speedX + 0.5 * aX * mytime * mytime), (int)(mybePoint.y + speedY + 0.5 * aY * mytime *mytime)});
+        //加入偏差
+        int tspeedX = speedX;
+        if(speedX > 0)  tspeedX = speedX + 21;
+        else if(speedX < 0) tspeedX = speedX - 21;
+        speedY -= 4;
+
+        prePoint.push_back({(int)(mybePoint.x + tspeedX + 0.5 * aX * mytime * mytime), (int)(mybePoint.y + speedY + 0.5 * aY * mytime *mytime)});
         newPoints.push_back({mybePoint.x, mybePoint.y});
     }
     //cout << "prePoint = " << prePoint[0] << ", " << prePoint[1] <<endl;
