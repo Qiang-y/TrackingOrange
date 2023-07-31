@@ -43,11 +43,6 @@ Point myTrack::getContours(Mat img_mask){
     vector<Vec4i> hierarchy;
     //得到轮廓的点
     findContours(img_mask, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-    //画出轮廓(画出所有的，可能会有噪音)
-    //drawContours(img, contours, -1, Scalar(255, 0, 255), 4);
-    //第三个参数为要绘制的第几个轮廓，-1为轮廓
-
-    //vector<vector<Point>> conPoly(contours.size());
     vector<Rect> boundRect(contours.size());
     Point myPoint(0, 0);    //用来保存中心点
 
