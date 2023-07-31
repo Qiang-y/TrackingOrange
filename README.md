@@ -7,6 +7,9 @@
 
 ***
 
+***
+git操作失误导致kalman里的东西都丢了，我回家再补上来😭😭😭😭
+***
 ./kalman 文件夹里使用的是kalman滤波，目前只可以预测下一帧的位置。
 
 opencv自带的kalman滤波器暂时没能弄明白是如何工作的，我参考了 https://github.com/radikz/Ball-Prediction 
