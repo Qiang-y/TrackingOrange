@@ -14,7 +14,7 @@ myTrack::myTrack(string str){
     createTrackbar("V max", "track", &vmax, 255);
     */
 
-    while(waitKey(delay) != 27){
+    while(waitKey(0) != 27){
         cap >> img;
         if(img.empty()) break;
         
@@ -32,7 +32,7 @@ myTrack::myTrack(string str){
 
         imshow("img",img);
         //imshow("hsv", imgHSV);
-        //imshow("mask", mask);
+        imshow("mask", mask);
         timeIndex++;
     }
 
@@ -103,70 +103,116 @@ void myTrack::findOrange(Mat img){
     
     Point myPoint = getContours(mask);
 
-    if(!newPoints.empty() && myPoint != Point(NULL, NULL)){
-        prespeedX = speedX / mytime;
-        prespeedY = speedY / mytime;
-
-        speedX = myPoint.x - newPoints.back()[0];
-        speedY = myPoint.y - newPoints.back()[1];
-        cout << "old_newPoint = " << newPoints.back()[0] << ", " << newPoints.back()[1] <<endl;
-
+    //没检测到
+    if(myPoint == Point(NULL, NULL)){
+        newPoints.push_back({(int)state(0,0), (int)state(1,0)});
     }
-    cout << "speed = " << speedX << ", " << speedY <<endl;
-    cout << "prespeed = " << prespeedX << ", " << prespeedY <<endl;
-    cout << "myPoint = " << myPoint.x << ", " << myPoint.y <<endl;
-
-
-
-    //newPoints.push_back({myPoint.x, myPoint.y});
-    if(myPoint != Point(NULL, NULL)){
-        //判断是否转向
-        if(abs(speedX - prespeedX) > abs(speedX + prespeedX) || abs(speedY - prespeedY) > abs(speedY + prespeedY) || (speedX == 0 && speedY == 0)){
-            if(myPoint.x < 300 || myPoint.x > 1000){
-                putText(img, "turn", Point(500, 400), 2, 1, Scalar(25,0,64),1);
-                cout << "拐了" << endl;
-            }
-        }
-        
-
-        float aX = (speedX / mytime - prespeedX) / mytime;
-        float aY = (speedY / mytime - prespeedY) / mytime;
-        //prePoint.push_back({(int)(myPoint.x + speedX + 0.5 * aX * mytime * mytime), (int)(myPoint.y + speedY + 0.5* aY * mytime * mytime)});
-        prePoint.push_back({(int)(myPoint.x + speedX + 0.5 * aX * mytime * mytime), (int)(myPoint.y + speedY + 0.5* aY * mytime * mytime)});
+    //检测到了
+    else{
+        kalmanUpd(start, myPoint.x, myPoint.y);
+        start = true;
         newPoints.push_back({myPoint.x, myPoint.y});
     }
-    else{    
-        Point mybePoint(prePoint.back()[0], prePoint.back()[1]);
-        //画可能圆
-        circle(img, mybePoint, 6, Scalar(0,0,255),3);
-        circle(img, mybePoint, r, Scalar(255,255,0),3);
+    kalmanPred(start);
+    //画预测
+    circle(img, Point(state(0,0), state(1,0)), 6, Scalar(0,255,164),3);
+    circle(img, Point(state(0,0), state(1,0)), r, Scalar(0,255,164),3);
 
-        float aX = (speedX / mytime - prespeedX) / mytime;
-        float aY = (speedY / mytime - prespeedY) / mytime;
-
-        // prePoint[0] = prePoint[0] + speedX - 3;
-        // prePoint[1] = prePoint[1] + speedY - 3;
-        //加入偏差
-        int tspeedX = speedX;
-        if(speedX > 0)  tspeedX = speedX + 21;
-        else if(speedX < 0) tspeedX = speedX - 21;
-        speedY -= 4;
-
-        prePoint.push_back({(int)(mybePoint.x + tspeedX + 0.5 * aX * mytime * mytime), (int)(mybePoint.y + speedY + 0.5 * aY * mytime *mytime)});
-        newPoints.push_back({mybePoint.x, mybePoint.y});
-    }
-    //cout << "prePoint = " << prePoint[0] << ", " << prePoint[1] <<endl;
-    cout << "new_newPoint = " << newPoints.back()[0] << ", " << newPoints.back()[1] <<endl;
-    //画预测圆
-    circle(img, Point(prePoint.back()[0], prePoint.back()[1]), 6, Scalar(0,255,164),3);
-    circle(img, Point(prePoint.back()[0], prePoint.back()[1]), r, Scalar(0,255,164),3);
-    
-    // if(timeIndex >= 15){
-    //     //画出之前预测的圆
-    //     circle(img, Point(prePoint[timeIndex - 15][0], prePoint[timeIndex - 15][1]), 6, Scalar(88,141,255),3);     
-    // }
-
-    imshow("mask", mask);
+    //imshow("mask", mask);
 
 }
+
+void myTrack::kalmanUpd(bool start, float measX, float measY){
+    
+    A << 1, 0, 1, 0,
+         0, 1, 0, 1,
+         0, 0, 1, 0,
+         0, 0, 0, 1;
+       
+    H << 1, 0, 0, 0,
+         0, 1, 0, 0,
+         0, 0, 0, 0,
+         0, 0, 0, 0;
+
+    Q << 0.1, 0, 0, 0,
+         0, 0.1, 0, 0,
+         0, 0, 0.1, 0,
+         0, 0, 0, 0.1;
+
+    I << 1, 0, 0, 0,
+         0, 1, 0, 0,
+         0, 0, 1, 0,
+         0, 0, 0, 1;
+
+    R << 1, 1, 0, 0,
+         1, 1, 0, 0,
+         0, 0, 0, 0,
+         0, 0, 0, 0;
+
+
+
+    y << measX, 0, 0, 0,
+        measY, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0;
+
+    if (!start){
+        state << 0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0;
+
+        P << 1000, 0, 0, 0,
+            0, 1000, 0, 0, 
+            0, 0, 1000, 0,
+            0, 0, 0, 1000;
+        
+    //   start = true;
+    }
+      
+    S = H * P * H.transpose() + R; 
+    cout << "S: " << endl << S << endl << endl;
+
+    S1(0,0) = S(0,0);
+    S1(1,0) = S(1,0);
+    S1(0,1) = S(0,1);
+    S1(1,1) = S(1,1);
+        cout << "S1: " << endl << S1 << endl << endl;
+
+     S2 = S1.inverse();
+     Si(0,0) = S2(0,0);
+     Si(0,1) = S2(0,1);
+     Si(1,0) = S2(1,0);
+     Si(1,1) = S2(1,1);
+    cout << "S2: " << endl << S2 << endl << endl;
+     
+      K = P * H.transpose() * Si;
+      cout << "P: " << endl << P << endl << endl;
+      cout << "H_t: " << endl << H.transpose() << endl << endl;
+      cout << "Si: " << endl << Si << endl << endl;
+      cout << "k: " << endl << K << endl << endl;
+
+      state = state + K * (y - H * state);
+      P = (I - K * H) * P;
+      cout << state << endl << endl;
+    
+    // cout << measX << endl;
+}
+
+void myTrack::kalmanPred(bool start){
+
+    A << 1, 0, 1, 0,
+         0, 1, 0, 1,
+         0, 0, 1, 0,
+         0, 0, 0, 1;
+
+    Q << 100, 0, 0, 0,
+         0, 100, 0, 0,
+         0, 0, 100, 0,
+         0, 0, 0, 100;
+
+    state = A * state;
+    P = A * P * A.transpose() + Q;
+}
+
 

@@ -1,8 +1,10 @@
 #pragma once
 #include<iostream>
 #include<opencv2/opencv.hpp>
+#include <eigen3/Eigen/Dense>
 using namespace std;
 using namespace cv;
+using namespace Eigen;
 
 class myTrack{
 private:
@@ -21,8 +23,24 @@ private:
     vector<vector<int>> newPoints;  //记录中心点路劲
     vector<vector<int>> mycolor = {{8, 360}, {140, 255}, {55, 255}};    //橘子颜色范围
 
+    bool start = false;
+    Matrix4f A;
+    Matrix4f state;
+    Matrix4f H;
+    Matrix4f P;
+    Matrix4f Q;
+    Matrix4f R;
+    Matrix4f y;
+    Matrix4f K, S;
+    Matrix4f Si;
+    Matrix4f I;
+    Matrix2f S1, S2;
+
 public:
     myTrack(string str);
     Point getContours(Mat img_mask);
     void findOrange(Mat img);
+    void kalmanUpd(bool, float, float);
+    void kalmanPred(bool);
+
 };
