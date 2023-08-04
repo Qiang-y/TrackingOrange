@@ -24,16 +24,17 @@ private:
     vector<vector<int>> mycolor = {{8, 360}, {140, 255}, {55, 255}};    //橘子颜色范围
 
     bool start = false;
+    Matrix<float, 4, 1> state;
+    Matrix<float, 2, 4> H;
+    Matrix<float, 2, 1> y;
+    Matrix<float, 4, 2> K;
     Matrix4f A;
-    Matrix4f state;
-    Matrix4f H;
     Matrix4f P;
     Matrix4f Q;
-    Matrix4f R;
-    Matrix4f y;
-    Matrix4f K, S;
-    Matrix4f Si;
     Matrix4f I;
+    Matrix2f R;
+    Matrix2f S;
+    Matrix2f Si;
     Matrix2f S1, S2;
 
 public:

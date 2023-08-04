@@ -123,16 +123,14 @@ void myTrack::findOrange(Mat img){
 }
 
 void myTrack::kalmanUpd(bool start, float measX, float measY){
-    
+    //状态转移矩阵
     A << 1, 0, 1, 0,
          0, 1, 0, 1,
          0, 0, 1, 0,
          0, 0, 0, 1;
        
     H << 1, 0, 0, 0,
-         0, 1, 0, 0,
-         0, 0, 0, 0,
-         0, 0, 0, 0;
+         0, 1, 0, 0;
 
     Q << 0.1, 0, 0, 0,
          0, 0.1, 0, 0,
@@ -143,24 +141,17 @@ void myTrack::kalmanUpd(bool start, float measX, float measY){
          0, 1, 0, 0,
          0, 0, 1, 0,
          0, 0, 0, 1;
+    R << 1, 1,
+         1, 1;
 
-    R << 1, 1, 0, 0,
-         1, 1, 0, 0,
-         0, 0, 0, 0,
-         0, 0, 0, 0;
-
-
-
-    y << measX, 0, 0, 0,
-        measY, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0;
+    y << measX,
+        measY;
 
     if (!start){
-        state << 0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0;
+        state << 0,
+                0,
+                0,
+                0;
 
         P << 1000, 0, 0, 0,
             0, 1000, 0, 0, 
@@ -171,6 +162,7 @@ void myTrack::kalmanUpd(bool start, float measX, float measY){
     }
       
     S = H * P * H.transpose() + R; 
+    
     cout << "S: " << endl << S << endl << endl;
 
     S1(0,0) = S(0,0);
